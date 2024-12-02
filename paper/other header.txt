@@ -1,0 +1,7 @@
+\author[1]{Evan Kolberg}
+\author[2]{Nathan Wu}
+\author[2]{Trevor Sullivan}
+\author[2]{Wesley Clawson}
+
+\affil[1]{John F. Kennedy High School, Bellmore, NY}
+\affil[2]{Allen Discovery Center, Tufts University, Medford, MA}

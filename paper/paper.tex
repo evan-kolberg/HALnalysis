@@ -1,0 +1,595 @@
+% *** use the LuaLaTex compiler ***
+
+\documentclass{article} % *** when it looks like [draft]{article} IT IS CURRENTLY IN DRAFT MODE -- IMAGES WON'T RENDER ***
+
+% math & algos
+\usepackage{amsmath}
+\usepackage{fix-cm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% figures and captions
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{placeins}
+
+% bibliography
+\usepackage[backend=bibtex, style=authoryear, maxcitenames=1, maxbibnames=1]{biblatex}
+\addbibresource{references.bib}
+\DefineBibliographyStrings{english}{%
+  andothers = {et al\adddot\addcomma}
+}
+
+% formatting
+\usepackage{authblk}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{fontspec}
+\usepackage{indentfirst}
+\usepackage{etoolbox}
+
+% style
+\setmainfont{Times New Roman}
+\geometry{margin=1in}
+\onehalfspacing
+
+% title
+\title{
+    \vspace{6cm}
+    \fontsize{20pt}{24pt}
+    \rule{\textwidth}{0.8pt} \\[0.5ex]
+    \vspace{-0.5ex}
+    \textbf{Identification of Excitatory and Inhibitory E18 Neurons for Frequency Regulation of Network Activity via HD-MEAs} \\[0.5ex]
+    \vspace{-2ex}
+    \rule{\textwidth}{0.8pt}
+}
+\author{\textbf{Evan Kolberg}}
+\date{}
+
+% bib formatting
+\renewcommand*{\bibfont}{\fontsize{11pt}{15pt}\selectfont\setmainfont{Times New Roman}}
+
+% header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% title spacing
+\titlespacing*{\section}
+{0pt}{0.5ex plus 0.5ex minus .2ex}{0.5ex plus .2ex}
+\titlespacing*{\subsection}
+{0pt}{0.5ex plus 0.5ex minus .2ex}{0.5ex plus .2ex}
+\titlespacing*{\subsubsection}
+{0pt}{0.5ex plus 0.5ex minus .2ex}{0.5ex plus .2ex}
+
+% paragraph spacing
+\setlength{\parskip}{0.25em}
+\setlength{\parindent}{2em}
+
+\begin{document}
+% size | line spacing
+\fontsize{11pt}{15pt}\selectfont
+
+% suppress page numbers on the first two pages
+\pagenumbering{gobble}
+
+% figure captions
+\captionsetup[figure]{
+    labelfont=bf,
+    labelsep=period,
+    font=normalsize,
+    justification=justified,
+    singlelinecheck=false
+}
+
+\captionsetup[subfigure]{
+    labelfont=bf,
+    labelsep=space,
+    font=normalsize,
+    justification=centering,
+    singlelinecheck=false
+}
+
+\maketitle
+\thispagestyle{fancy}
+
+\newpage
+
+% abstract
+\section*{Abstract}
+This study introduces a novel method of classifying excitatory and inhibitory neurons for \textit{in vitro} cultures plated on high-density multielectrode arrays (HD-MEAs) using advanced data analysis techniques. Traditional neuron classification methods often rely on invasive procedures and extensive human intervention, limiting their scalability and adaptability. This approach leverages HD-MEAs to record network activity and employs complex algorithms to analyze the data, providing a non-invasive, scalable solution for neuron classification. Briefly, the methodology involves binning spike data and integrating the average cofiring probabilities for all channels, producing an organized spectrum of neuron channels, signifying their function regarding bursting. By integrating real-time feedback in a closed-loop system, cultures can learn to manage their own neuronal activity. Temporal changes in this activity can then be tracked using the engineered classification method. The study also explores applying these techniques in a custom stimulation experiment, referred to as the frequency game. This experiment aims to regulate network activity through targeted stimulation, adjusting the frequency levels based on action potentials passing through square excitatory and inhibitory regions. Results indicate that the frequency game effectively allows the culture to maintain a defined state of equilibrium, showing probabilities converging at specific stimulation levels as well as signs of learning. Nevertheless, the method's reliability can be affected by outliers and inconsistencies in recording data. In the face of these limitations, the proposed approach offers a promising tool for neuroscience research, enabling the study of neural networks in a more holistic manner. 
+
+\newpage
+
+% reset page numbering and start from 1
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% ROL
+\section{Review of Literature}
+Multielectrode arrays (MEAs) are devices comprising multiple microscopic electrodes systematically arranged in a grid-like pattern designed to record electrical signals from \textit{in vitro} neurons or stimulate neural activity \parencite{Wagenaar2006-td, Ahmadi_Seyedkhani2024-wl}. Having been utilized for decades now, MEAs have proven to be an invaluable tool for providing a simplified, yet functionally reflective model of network activity and dynamics found within \textit{in vivo} subjects \parencite{Obien2015-tg}. Originally fabricated to glean the bioelectric signals from neural tissues, MEAs are particularly used today for their ability to simultaneously facilitate recording from thousands of electrodes at frequencies exceeding thousands of hertz \parencite{Obien2015-tg, Frey2008-ou}. These \textit{in vitro} systems, typically derived from hippocampal, cortical, or other brain regions, enable exploration into action potential propagation, synaptic transmission, and other network-wide behaviors such as synchronization and bursting \parencite{Lee2020-es}.
+
+In recent years, MEAs have undergone significant changes. Earlier MEAs were limited in numerous ways, regularly yielding an incomplete representation of neuronal activity \parencite{Muller2015-nz, Miccoli2019-hi}. Because of their low spatial resolution and poor signal-to-noise ratio, there was often a limited throughput of significant data. Modern MEAs, commonly referred to as high-density MEAs (HD-MEAs), have addressed many of the limitations of earlier technology. HD-MEAs provide higher spatial resolution, allowing for more precise activity mapping at a subcellular level, higher electrode count, enhanced signal-to-noise ratio, robustness, and overall versatility \parencite{Obien2015-tg, Obien2019-hs, Emmenegger2019-dk}.
+
+Throughout neural networks, a common phenomenon known as bursting refers to the rapid succession of action potentials, referred to as spikes, that behave in an undulatory manner \parencite{Zeldenrust2018-gz}. These spikes are brief electrical signals generated by the flow of ions such as sodium (Na\textsuperscript{+}) and potassium (K\textsuperscript{+}) through membrane channels \parencite{Stasenko2023-bf}. They are regarded as the backbone of neuronal communication and network synchronization and have been proven critical for functions such as memory and synaptic plasticity \parencite{Guo2015-oo}. In closed-loop MEA stimulation, the objective is to regulate bursts through controlled electrical input, effectively mimicking natural neural signals \parencite{Wu2012-bh}. Unlike open-loop systems where stimulation is administered regardless of the ongoing activity, closed-loop systems integrate real-time feedback. This allows for more precise control over the rate at which bursting occurs, helping to either enhance or suppress bursts through patterns of repeated stimulation \parencite{Berenyi2012-ci}.
+
+When used for training, MEAs provide stimulation intending to receive a specific pattern in return. Over time, neurons learn to fire in coordinated ways, strengthening synaptic connections where repeated, long-term activity occurs. Conversely, the connection will weaken if they do not fire as frequently \parencite{Wagenaar2006-nz}. The effectiveness of training depends on the maturity of the culture since early-stage networks (7-14 days \textit{in vitro}) might not be as responsive to training compared to more mature networks (14-21 days \textit{in vitro}) as stabilization allows for more synaptic plasticity \parencite{Pimashkin2011-rc}. During this time, the culture actively refines connections, making them more adaptable to patterned stimulation.
+
+Within neural structures, neurons often fall into two major categories: excitatory and inhibitory—both play complementary roles in network communication and burst undulation. Excitatory neurons, which release the glutamate neurotransmitter, are responsible for propagating action potentials in their post-synaptic targets by depolarizing their membranes and therefore increasing the chance of firing \parencite{Douglas2004-hr}. Contrarily, inhibitory neurons, primarily releasing the gamma-aminobutyric acid neurotransmitter, hyperpolarize post-synaptic targets, decreasing their likelihood of firing \parencite{Markram2004-ud}. The balance between these two roles is key to maintaining proper network dynamics, as excitatory neurons drive activity while inhibitory neurons regulate and synchronize such activity, preventing pathological overexcitation.
+
+When it comes to identifying excitatory and inhibitory neurons, there is a large variety of accurate methods that can be categorized into two main groups: those that rely on visual cues, and those that are signal-based and rely on electrophysiological properties. MEAs specifically use the latter for classification, and methods such as spike sorting, firing rate analysis, cross-correlation analysis, and post-synaptic potential analysis each provide accurate insights \parencite{Quiroga2004-kd, Buzsaki2014-ta, Perkel1967-wa, Stuart1997-ho}. However, oftentimes, these methods fall short in at least one of the following areas: requisite human intervention, scalability, modularity, holistic analysis, invasiveness, and/or objective quantification. This preliminary research demonstrates the interest in an alternative method for classifying neurons that is adaptable to a wide range of MEA data sets and experiments.
+
+% objective
+\section{Objective}
+To develop a novel method of classifying neurons as excitatory and inhibitory, purely using recordings of network activity and complex data analysis techniques. Next, if the devised functions are successfully implemented, the cultures will be stimulated with an applied frequency that adjusts when bursts traverse through two subsections of electrodes in a square-radius pattern. These regions will enclose the most excitatory and most inhibitory neurons of each culture. 
+
+
+
+% methodology
+\section{Methodology}
+The cortices used in the MEA wells came from BrainBits, the supplier that microsurgically dissected tissue from E18 rats. At least 2 million viable cells were guaranteed within each transaction, and each was shipped in a 2 milliliter solution of THRYVE Embryonic Storage Media complete with B27, a serum-free supplement for neuronal cell cultures. B27 helps reduce oxidative stress, has proteins that promote cell growth, contains vitamins to support various cellular functions, and has fatty acids to maintain cell membrane integrity. Once plated, the cells were kept at \(37\,^{\circ}\mathrm{C}\), \(5\% \mathrm{CO}_2\), and \(95\%\) relative humidity.
+
+The HD-MEAs used throughout the experiment were complementary to the MaxTwo Multiwell HD-MEA System. Each chip contains 6 wells, each with 26,400 electrodes, a 3265 electrodes/\(mm^2\) density, with each electrode being 12.0 \(\times\) 8.8 \(\mu{m}^2\) in size, and 17\(\mu{m}\) away from an adjacent electrode (center-to-center distance). 1020 to 1024 channels can be recorded simultaneously at 10.0 kHz. Once loaded into the machine, it is ready for data acquisition and/or stimulation. For network and activity scans, the MaxTwo System software was sufficient for basic data collection and analysis. However, further analysis was developed in Python in order to meet the objective.
+
+To produce graphical representations, various data files were used to confirm the implementation of each algorithm in Python. The Python algorithms were converted to mathematical notation and pseudocode, reducing language-specific syntax and library function names. Pictures chosen were selected for their clarity and ability to best exemplify their function.
+
+% binning spike data
+\subsection{Binning The Spike Data}
+
+The first step in processing the data is to reduce it to a binary dataframe where columns represent channels and rows represent each group of time (time bins). The input is a continuous stream of spike data, and each channel is associated with a spike amplitude. Succinctly, a loop iterates over each spike in the input dataframe, calculates the bin index, and assigns the spike to the corresponding bin. The output is a binary dataframe where each row represents a time bin and each column represents a channel. The value at each cell is 1 if a spike occurred in that channel at that time bin, and 0 otherwise. By binning the data, any transient noise or over-selected spikes are removed, simplifying the data for further analysis. Over-selected channels refer to electrodes that record spikes from the same neuron, leading to an inaccurate representation of network activity.
+
+A list of electrode coordinate pairs is passed into the function to verify that each recorded channel has a unique assigned coordinate. On occasion, the MaxTwo machine would redundantly set the same channel to multiple electrodes, leaving the validity of the data unclear. Data revealed to be invalid was not used in the development of this methodology.
+
+
+
+
+
+% hamming & phys dists
+\subsection{Calculating Hamming and Physical Distances}
+
+Hamming distance, in this context, measures the number of differing spike events between two channels' spike patterns at each point in time. This effectively quantifies how different two channels are from each other, with a lower Hamming distance indicating a higher similarity. This is especially important to visualize in order to confirm the validity of the data that is being used. The physical distance calculations, on the other hand, are the Euclidean distance between two channels on the MEA chip. This is calculated using the Pythagorean theorem, where the x and y coordinates of each channel are used to determine the distance between them. Both Hamming and physical distances for all pairs of channels are calculated, returning the results in two separate arrays. Knowing how far apart two channels are physically can help to determine if the Hamming distance is a result of the physical distance or if it is due to the spike patterns themselves.
+
+\begin{singlespace}
+    \begin{algorithm}
+    \caption{Binning Spike Data | Created by student researcher}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:}
+            \State  Spike data: $S_{i}(t)$ for $i = 0, 1, \ldots, n-1$ (spikes for each channel)
+            \State  Mapping: $M_{i} = (x_{i}, y_{i})$ for $i = 0, 1, \ldots, n-1$ (positions of channels)
+            \State  Bin size: $\Delta t$ (default $0.01$ seconds)
+            \State  Mode: binary or count (default binary)
+            \State
+            \State \textbf{Algorithm:}
+            \State  Check for duplicate channels in mapping
+            \State  Assert mode is binary or count
+            \State  $T_{\text{last}} = \max(S_{i}(t))$ (last spike time)
+            \State  $T_{\text{first}} = \min(S_{i}(t))$ (first spike time)
+            \State  Total duration $= T_{\text{last}} - T_{\text{first}}$
+            \State  Number of bins $= \left\lfloor \frac{T_{\text{last}}}{\Delta t} \right\rfloor - \left\lfloor \frac{T_{\text{first}}}{\Delta t} \right\rfloor + 1$
+            \State  Initialize $B$ (binned data array)
+            \State  Initialize bin\_ids (array of bin indices)
+            \For{each spike $S_{i}(t)$}
+                \State Calculate bin index $b = \left\lfloor \frac{t}{\Delta t} \right\rfloor - \left\lfloor \frac{T_{\text{first}}}{\Delta t} \right\rfloor$
+                \If{channel $i$ is in mapping}
+                    \State Find channel index $c$
+                    \If{mode is binary}
+                        \State $B[b, c] = 1$
+                    \ElsIf{mode is count}
+                        \State $B[b, c] += 1$
+                    \EndIf
+                \EndIf
+                \State Assign bin index to spike
+            \EndFor
+            \State
+            \State \textbf{Results:}
+            \State  Return binned data $B$, spike data with bin indices, and times array
+        \end{algorithmic}
+    \end{algorithm}
+\end{singlespace}
+
+\begin{singlespace}
+    \begin{algorithm}
+    \caption{Calculate Hamming and Physical Distances | Created by student researcher}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:}
+            \State  $M_i = (x_i, y_i)$ for $i = 0, 1, \ldots, n-1$ (positions of channels)
+            \State  $n$ (number of channels)
+            \State  $B_{ik}$ (binned spike data for channel $i$ at time $k$)
+            \State
+            \State \textbf{Algorithm:}
+            \State  Initialize $H = []$ (Hamming distances)
+            \State  Initialize $D = []$ (Physical distances)
+            \State  Total operations $= \frac{n(n-1)}{2}$
+            \For{$i = 0$ to $n-2$}
+                \For{$j = i+1$ to $n-1$}
+                    \State $d_{ij} = \sqrt{(x_i - x_j)^2 + (y_i - y_j)^2}$
+                    \State $D$ append $d_{ij}$
+                    \State $S_{ij} = \{k \mid B_{ik} = 1 \text{ or } B_{jk} = 1\}$
+                    \State $h_{ij} = \sum_{k \in S_{ij}} \delta(B_{ik}, B_{jk})$
+                    \State $H$ append $h_{ij}$
+                \EndFor
+            \EndFor
+            \State
+            \State \textbf{Results:}
+            \State  Return $H, D, \text{zero\_column\_titles}$
+        \end{algorithmic}
+    \end{algorithm}
+\end{singlespace}
+
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/M07458/DIV21/WELL3/ham_dists.png}
+        \caption{Hamming Distances Graph. Chip: M07458 | 21 days \textit{in vitro} | Well 3 | Created by student researcher}
+    \end{subfigure}
+    \hspace{\fill}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/M07458/DIV26/WELL5/scat_plot.png}
+        \caption{Hamming vs. Physical Distance Graph. Chip: M07458 | 26 days \textit{in vitro} | Well 5 | Created by student researcher}
+    \end{subfigure}
+    \caption{\textbf{Comparison of Hamming Distances and Hamming vs. Physical Distance Graphs.} (a) Naturally, the Hamming distances create a shape similar to a bellcurve where each pair of channels is compared. The y-axis represents the number of times a specific Hamming distance is found between two channels. (b) Hamming distancs are plotted against physical distances to further display the quality of the data. Points with both high Hamming and physical distances are important to take note of.}
+\end{figure}
+
+
+
+% cofiring prob
+\subsection{Calculating Cofiring Probabilities for a Single Channel}
+
+The cofiring probability algorithm is a method designed to quantify the likelihood that two neuronal channels will fire inside a specified window of time surrounding a spike in either channel. Throughout this methodology, a window of 10 time bins preceding a spike, 10 time bins after, totaling 21 time bins when including 0. The count is normalized by dividing by the total number of time bins, yielding a matrix of cofiring probabilities. This matrix provides a detailed view of the temporal firing relationships between channels, identifying patterns of synchronous activity.
+
+A subgraph below the heatmap, as shown in Figure 2(a) \& 2(b), is generated to show the average cofiring probabilities of the channel firing with all other channels, providing a holistic view of the heatmap. This subgraph helps in visualizing the overall cofiring behavior of each channel, making it easier to identify channels that have higher or lower probabilities of firing in synchrony with others. The algorithm is designed to allow for the analysis of multiple channels and time bins, providing a comprehensive view of the network activity. A vast number of channels can be analyzed, making it suitable for small and large-scale data.
+
+
+\begin{singlespace}
+    \begin{algorithm}
+    \caption{Calculate Cofiring Probabilities for 1 Channel \(\times\) All Channels | Created by student researcher}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:}
+            \State  $B_{i}(t)$ for $i = 0, 1, \ldots, n-1$ (binned spikes for each channel)
+            \State  $c$ (channel of interest)
+            \State  $w_{\text{pre}}$ (number of bins before spike) = 10
+            \State  $w_{\text{post}}$ (number of bins after spike) = 10
+            \State
+            \State \textbf{Algorithm:}
+            \State  Check if channel ID $c$ is in columns of $B$
+            \State  $B = B^T$ (transpose of binned spike data)
+            \State  $n$ = number of channels
+            \State  $T$ = number of time bins
+            \State  $i$ = index of channel $c$
+            \State  $\Delta t = w_{\text{pre}} + w_{\text{post}} + 1$
+            \State  $P$ = NaN matrix of size $(n, \Delta t)$
+            \State  $t_i = \{t \mid B_i(t) = 1\}$ (spike times for channel $i$)
+            \If{$|t_i| = 0$}
+                \State Return $P$
+            \EndIf
+            \For{each channel $j$}
+                \State $W = \mathbf{0}$ (window matrix)
+                \For{each spike time $t \in t_i$}
+                    \State $t_{\text{start}} = \max(t - w_{\text{pre}}, 0)$
+                    \State $t_{\text{end}} = \min(t + w_{\text{post}} + 1, T)$
+                    \State $W_{x, :} = B_{j, t_{\text{start}}:t_{\text{end}}}$
+                \EndFor
+                \State $P_{j, :} = \frac{1}{|t_i|} \sum_{x} W_{x, :}$
+            \EndFor
+            \State
+            \State \textbf{Results:}
+            \State  Return $P$
+        \end{algorithmic}
+    \end{algorithm}
+\end{singlespace}
+
+
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/M07458/DIV22/WELL3/cofiring_with_avg_vertical.png}
+        \caption{Chip: M07458 | 22 days \textit{in vitro} | Well 3 | Created by student researcher}
+    \end{subfigure}
+    \hspace{\fill}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/240626.M07484.WELL4/cofiring_with_avg_vertical.png}
+        \caption{Chip: M07484 | 33 days \textit{in vitro} | Well 4 | Created by student researcher}
+    \end{subfigure}
+    \caption{\textbf{Examples of Cofiring Probabilities for Single Channels.} (a) A randomly selected channel was chosen to display a heatmap and graph of the cofiring probabilities. Each row of the heatmap represents the calculated probabilities across 21 time bins with the reference channel 733. The subplot below the heatmap shows the average of these probabilities, an aggregated view of the heatmap. (b) A different, older culture was chosen to reiterate the visual performance of the cofiring algorithm, selecting channel 800 at random. Each time bin spans exactly 1 millisecond.}
+\end{figure}
+
+
+% avg probs
+\subsection{Calculating Average Cofiring Probabilities for All Channels}
+Subsequently, a complementary algorithm was created that wraps the average cofiring probability algorithm in a loop, performing the previous step for all channels. The result is a comprehensive matrix where each row corresponds to a channel and contains the average cofiring probabilities with all other channels.
+
+A key step involves calculating the average cofiring probability for each time bin by averaging the values across all channels. This average is then stored in the dictionary with the channel as the key. This process is repeated for all channels, resulting in a dictionary where each key is a channel, and the corresponding value is the average cofiring probability vector.
+
+
+\begin{singlespace}
+    \begin{algorithm}
+    \caption{Calculate Average Cofiring Probabilities for All Channels \(\times\) All Channels | Created by student researcher}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:}
+            \State  Binned data: $B_{i}(t)$ for $i = 0, 1, \ldots, n-1$ (binned spikes for each channel)
+            \State  Zero column titles: $Z$ (list of channels with no spikes)
+            \State  Pre-window: $w_{\text{pre}}$ (number of bins before spike) = 10
+            \State  Post-window: $w_{\text{post}}$ (number of bins after spike) = 10
+            \State
+            \State \textbf{Algorithm:}
+            \State  Initialize $P_{\text{avg}} = \{\}$ (dictionary for average probabilities)
+            \State  Channel titles: $C = \{c_{0}, c_{1}, \ldots, c_{n-1}\}$
+            \For{each channel $c_{i} \in C$}
+                \If{$c_{i} \notin Z$}
+                    \State $P_{i} = \text{cofiring\_probability}(B, c_{i}, w_{\text{pre}}, w_{\text{post}})$
+                    \State Average probability: $\bar{P}_{i} = \frac{1}{T} \sum_{t=0}^{T-1} P_{i}(t)$
+                    \State $P_{\text{avg}}[c_{i}] = \bar{P}_{i}$
+                \EndIf
+            \EndFor
+            \State
+            \State \textbf{Results:}
+            \State  Return average probabilities $P_{\text{avg}}$ as a DataFrame
+        \end{algorithmic}
+    \end{algorithm}
+\end{singlespace}
+
+
+
+\begin{figure}
+    \centering
+    \subfloat[Chip: M07484 | 33 days \textit{in vitro} | Well 4 | Created by student researcher]{\includegraphics[width=0.66\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/240626.M07484.WELL4/avg_prob_heatmap_all_chans.png}}
+    \caption{\textbf{Average Cofiring Probability Heatmap for All Channels.} (a) Each row in the heatmap shows the average cofiring probability between a given channel and all others, serving as a condensed illustration of the individual subplots shown in Figure 2.}
+\end{figure}
+
+
+
+% peak binary matrix
+\subsection{Generating Binary Matrix from Average Probabilities}
+Once the average cofiring probabilities are calculated, the next step is to generate a binary matrix that represents the peak firing times for each channel. A loop iterates through each channel and finds the time bin with the highest average probability. In succession, the corresponding cell in the sorted matrix is set to 1, thus creating a peak binary matrix. The average cofiring probability heatmap is then sorted by these peak times which displays which neurons are excitatory and inhibitory, at a visual level. Channels that peak after 0 are likely to be excitatory, while those that peak before are likely to be inhibitory.
+
+
+\begin{singlespace}
+    \begin{algorithm}
+    \caption{Generate Binary Matrix from Average Probabilities | Created by student researcher}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:}
+            \State  Average probabilities: $P_{\text{avg}}(i, t)$ for $i = 0, 1, \ldots, n-1$ and $t = 0, 1, \ldots, T-1$
+            \State
+            \State \textbf{Algorithm:}
+            \State  $n$ = number of channels
+            \State  $T$ = number of time bins
+            \State  Initialize binary matrix $B$ of size $(n, T)$ with zeros
+            \For{each channel $i = 0$ to $n-1$}
+                \State Find peak index $t_{\text{peak}} = \arg\max_{t} P_{\text{avg}}(i, t)$
+                \State $B(i, t_{\text{peak}}) = 1$
+            \EndFor
+            \State
+            \State \textbf{Results:}
+            \State  Return binary matrix $B$
+        \end{algorithmic}
+    \end{algorithm}
+\end{singlespace}
+
+
+
+\begin{figure}
+    \centering
+    \subfloat[Chip: M07484 | 33 days \textit{in vitro} | Well 4 | Created by student researcher]{\includegraphics[width=0.66\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/240626.M07484.WELL4/avg_prob_heatmap_all_chans_sort.png}}
+    \caption{\textbf{Average Cofiring Probability Heatmap for All Channels Sorted by Peaks.} (a) Sorting the probabilities increases the clarity of the heatmap shown in Figure 3(a). The proportion of channels that peak before 0 are likely inhibitory, while those that peak after are likely excitatory. Pre-spike firing can suppress the activity of others by hyperpolarizing postsynaptic neurons, reducing the likelihood that they will fire.}
+\end{figure}
+
+
+
+
+%sort by phys distance
+\subsection{Sorting Channels by Physical Distance and Average Probabilities}
+Similar to how the average cofiring probabilities heatmap can be sorted by peaks, it can also be sorted by physical distance. This will display gradual shifting in peak time bins as the physical distance between channels increases. Channels are sorted by physical distance from a reference channel, ascending from closest to farthest. The output is a heatmap that visually represents the variation in peak times relative to the physical distance between channels, allowing trends to emerge.
+
+\begin{singlespace}
+    \begin{algorithm}
+    \caption{Sort Channels by Physical Distance and Average Probabilities | Created by student researcher}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:}
+            \State  Binned data: $B_{i}(t)$ for $i = 0, 1, \ldots, n-1$ (binned spikes for each channel)
+            \State  Zero column titles: $Z$ (list of channels with no spikes)
+            \State  Mapping: $M_{i} = (x_{i}, y_{i})$ for $i = 0, 1, \ldots, n-1$ (positions of channels)
+            \State  Average probabilities: $P_{\text{avg}}(i, t)$ (DataFrame of average probabilities)
+            \State  Reference channel: $c_{\text{ref}}$
+            \State
+            \State \textbf{Algorithm:}
+            \State  Extract channel positions from mapping: $P_{i} = (x_{i}, y_{i})$
+            \State  Reference coordinates: $P_{\text{ref}} = (x_{\text{ref}}, y_{\text{ref}})$
+            \State  Channel titles: $C = \{c_{0}, c_{1}, \ldots, c_{n-1}\} \setminus Z$
+            \State  Calculate physical distances: $d_{i} = \sqrt{(x_{i} - x_{\text{ref}})^2 + (y_{i} - y_{\text{ref}})^2}  \forall i \in C$
+            \State  Sort channels by physical distance: $C_{\text{sorted}} = \text{sort}(C, d)$
+            \State  Sort distances: $d_{\text{sorted}} = \{d_{i} \mid i \in C_{\text{sorted}}\}$
+            \State  Sort indices: $I_{\text{sorted}} = \{\text{index}(c) \mid c \in C_{\text{sorted}}\}$
+            \State  Sort average probabilities: $P_{\text{avg, sorted}} = P_{\text{avg}}[I_{\text{sorted}}, :]$
+            \State
+            \State \textbf{Results:}
+            \State  Return sorted average probabilities $P_{\text{avg, sorted}}$ and sorted distances $d_{\text{sorted}}$
+        \end{algorithmic}
+    \end{algorithm}
+\end{singlespace}
+
+
+\begin{figure}
+    \centering
+    \subfloat[Chip: M07484 | 33 days \textit{in vitro} | Well 4 | Created by student researcher]{\includegraphics[width=0.66\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/240626.M07484.WELL4/avg_prob_heatmap_sort_by_dist.png}}
+    \caption{\textbf{Average Cofiring Probability Heatmap Sorted by Distance from a Single Channel.} (a) A randomly selected reference channel, 612, was chosen to display a slanted line of probabilities in the resulting heatmap. The y-axis starts at 0 and increases downward in terms of micrometers. This phenomenon occurs due to the spatial organization and connectivity patterns of neurons.}
+\end{figure}
+
+
+\FloatBarrier
+
+% cofire integrals
+\subsection{Calculating Average Cofiring Probability Integrals}
+Whether a channel is excitatory or inhibitory is determined by summing the product of the average cofiring probabilities on the y-axis and the time bins on the x-axis for each channel, equivalently calculating an integral. Inhibitory neurons decrease the activity of other neurons, showing a stronger influence before the reference spike. Conversely, excitatory neurons increase the activity of other neurons, showing a stronger influence after the reference spike. Thus, negative integral values signify inhibitory activity while positive values signify excitatory activity. Often, the strongest excitatory and inhibitory channels inhabit the left and right sides of the chip as those points are the farthest from the center. This creates a clear polar difference between the sides that shows the direction in which the neurons fire.
+
+\begin{singlespace}
+    \begin{algorithm}
+    \caption{Calculate Integrals of Average Cofiring Probability | Created by student researcher}
+        \begin{algorithmic}[1]
+            \State \textbf{Input:}
+            \State  $P_{\text{avg}}(i, t)$ for $i = 0, 1, \ldots, n-1$ (DataFrame of average probabilities)
+            \State  $M_{i} = (x_{i}, y_{i})$ for $i = 0, 1, \ldots, n-1$ (positions of channels)
+            \State
+            \State \textbf{Algorithm:}
+            \State  $T$ = number of time bins
+            \State  $\Delta t = \frac{T - 1}{2}$
+            \State  $t = \{-\Delta t, -\Delta t + 1, \ldots, \Delta t\}$
+            \For{$i = 0$ to $n-1$}
+                \State $I_{i} = \int_{-\Delta t}^{\Delta t} P_{\text{avg}}(i, t) \, dt$
+                \State $\text{status}_{i} = 
+                \begin{cases} 
+                \text{inhibitory} & \text{if } I_{i} < 0 \\
+                \text{excitatory} & \text{if } I_{i} \geq 0 
+                \end{cases}$
+            \EndFor
+            \State $R = \{(i, I_{i}, \text{status}_{i}) \mid i = 0, 1, \ldots, n-1\}$
+            \State $R = R \cup M$
+            \State
+            \State \textbf{Results:}
+            \State  Return results DataFrame $R$
+            \State  $R_{\text{sorted}} = \text{sort}(R, I)$
+            \State  $N_{\text{inhibitory}} = \sum_{i} \mathbf{1}(\text{status}_{i} = \text{inhibitory})$
+            \State  $N_{\text{excitatory}} = \sum_{i} \mathbf{1}(\text{status}_{i} = \text{excitatory})$
+            \State  Output results to file: \text{integrals.txt}
+            \For{each row in $R_{\text{sorted}}$}
+                \State Output line: Channel: $i$, Electrode: $e_{i}$, X: $x_{i}$, Y: $y_{i}$, Status: $\text{status}_{i}$, Integral: $I_{i}$
+            \EndFor
+            \State Output total counts: Total inhibitory: $N_{\text{inhibitory}}$, Total excitatory: $N_{\text{excitatory}}$
+        \end{algorithmic}
+    \end{algorithm}
+\end{singlespace}
+
+
+
+\begin{figure}
+    \centering
+    \subfloat[Chip: M07484 | 33 days \textit{in vitro} |
+    Well 4 | Created by student researcher]{\includegraphics[width=0.8\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/240626.M07484.WELL4/chip_vis.png}}
+    \caption{\textbf{Chip Visualization of Excitatory and Inhibitory Status for Chip M07484.} (a) The spectrum of integral values derived from the average cofiring probabilities is best visualized with a diverging color map. Excitatory neurons are colored in blue, while inhibitory neurons are colored in red. The strength of the color is directly proportional to the integral value.}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \subfloat[Chip: M07458 | 21 days \textit{in vitro} |
+    Wells 0-5 | Created by student researcher]{\includegraphics[width=1\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/plts_without_structure/montage_M07458_frame_0.png}}
+    \caption{\textbf{Chip Visualization of Excitatory and Inhibitory Status for Chip M07458.} (a) Each well exhibits a unique directional flow of action potentials as demonstrated in each of the 6 wells from the same chip.}
+\end{figure}
+
+
+\FloatBarrier
+
+% freq game
+\subsection{Frequency Game}
+With this novel method of classifying neurons as excitatory and inhibitory, a practical application of these findings was implemented in a custom stimulation experiment further referenced as the frequency game. This was a closed-loop stimulation experiment where the top-most excitatory and bottom-most inhibitory neurons were surrounded by electrodes arranged in a square-radius pattern for active recording, referred to as buttons A and B. The square-radius pattern is similar to a circular radius but uses a square configuration with a radius of 10 electrodes, as shown in Figure 8(a). Over time, changes in button press probability may emerge.
+
+The culture underwent stimulation at a variable frequency, and when a burst passed through a button above a certain threshold of strength, the rate of stimulation adjusts accordingly; one button, once "clicked," increases the frequency, while the other decreases it. This frequency ranged from 0.02 Hz to 2 Hz, which is linearly proportional to a defined stimulation level ranging from 0 to 10. Stimulation was administered at separate points far from either button and sparsely covered a large portion of each chip.
+
+Using a recording from a single culture, chip M07480, subsequent analyses were performed to reveal the spectrum of action potential relationships for each recorded channel. From that list, the top-most and bottom-most channels, derived from the spectrum of average cofiring probability integrals, were selected to be encapsulated in buttons. Across 4 culture trials over 5 different days, a unique pair of inhibitory and excitatory neurons was chosen. Each experiment ran for about 60 minutes on each of the 5 days.
+
+
+
+\begin{figure}
+    \centering
+    \subfloat[Taken by student researcher]{\includegraphics[width=0.85\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/visual_media/freq_game_action_shot.png}}
+    \caption{\textbf{Frequency Game Experiment in Progress.} (a) A combination of both the MaxLab Live Scope software and custom configurations are shown running. Live graphs of stimulation frequency and total button presses are displayed as the experiment is ongoing.}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \subfloat[Compiled by Trevor Sullivan | Data collected by student researcher]{\includegraphics[width=0.73\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/freq_game_analysis/freq-game-graph.png}}
+    \caption{\textbf{Change in Button A Press Probability at Each Stimulation Level.} (a) As the stimulation level increases, the average change in button A press probability is shown to converge to 0.00 change, or 50\% press probability.}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \subfloat[Compiled by Trevor Sullivan | Data collected by student researcher]{\includegraphics[width=0.90\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/freq_game_analysis/freq-game-day-by-day.png}}
+    \caption{\textbf{Button A Press Probabilities Over Time.} (a) The press probabilities of button A are plotted over each stimulation level and descend in chronological progression. The colored lines represent the different wells recorded across the 5 days.}
+\end{figure}
+
+
+
+
+% results
+\section{Results}
+After all data was collected after the 5 days of experimentation, the results were analyzed to determine the effectiveness of the frequency game. The probability that button A was pressed was plotted over each stimulation level, showing the effects balancing between the two buttons. The colored lines on the graph represent different cultures descending in chronological progression.
+
+At stimulation level 0 (0.02 Hz), each culture presented a scattered probability of total button A presses, leading to the assumption that the physical location of each button was largely responsible for this behavior. As the stimulation level increased, specifically at levels 5 to 9, the probabilities started to converge to around 50\%, indicating that the frequency game was effective in balancing both buttons. Around stimulation level 10 (2 Hz), the probabilities across each culture began to diverge, suggesting that the target frequency for ideal balancing of this frequency game is between 1.0 and 1.8 Hz, most prominent around 1.6 Hz. This is significant since the button placement for each well was adjusted to enclose the topmost excitatory and bottommost inhibitory neurons.
+
+On day 08/28/24, the only significant stimulation level is around 9, 1.8 Hz. After this first day, this range of significant stimulation levels widens to include levels 5 to 9, potentially showing the effect of learning. By day 08/30/24, the range of significant stimulation levels further widens to include levels 4 to 9, bolstering the assumption that the culture was able to learn and adapt to the frequency game, with the exception of well 1 which is seen to be an outlier throughout most of the experiment. Lastly, on day 09/04/24, the range of significant stimulation levels shifts to levels 5 to 10. 
+
+Tangentially, the average inhibitory to excitatory ratios were plotted over time for each day, as shown in Figure 11(a) \& 11(b). The control group, recordings performed before any experimental stimulation was applied to the culture, show a relatively gentle degree of oscillation. Data points were collected at 5 different days \textit{in vitro} for each the control and experimental groups. Recordings that were taken while the frequency game was ongoing show a more erratic degree of oscillation. This suggests that the frequency game had a polarizing effect on the overall network activity of the culture, leading to numerous assumptions that can be made.
+
+\begin{figure}
+    \centering
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/M07480/ratios_1.png}
+        \caption{Before, Control | Chip: M07480 | Recorded across 5 different days | Wells 0-5 | Created by student researcher}
+    \end{subfigure}
+    \hspace{\fill}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{C:/Users/evank/iCloudDrive/Desktop/HALnalysis_summer_2024_data/plots/freq_game_analysis/ratios_2.png}
+        \caption{Afterwards, Experimental | Chip: M07480 | Recorded across 5 different days | Wells 0, 1, 2, 4 | Created by student researcher}
+    \end{subfigure}
+    \caption{\textbf{Comparison of Control and Experimental Groups for Chip M07480.} (a) 5 different days of control recordings were plotted to show the ratio of inhibitory to excitatory counts. A purple interpolation line mimics the natural oscillation of the data. A red regression line shows the overall trend. (b) 4 of the 6 wells were recorded across 5 different days for the experiment group. In addition to a red regression line, a green interpolative step function shows the change in ratio of inhibitory to excitatory counts per day. The slope of a simple moving average line is compared to the slope of the regression line.}
+\end{figure}
+
+
+
+
+ % discussion
+\section{Discussion}
+\subsection{Classification of excitatory and inhibitory relationship in neurons}
+Traditional methods for classifying neurons as excitatory or inhibitory often rely on invasive procedures, extensive human intervention, or are limited by their scalability and adaptability to various datasets. Techniques such as spike sorting, firing rate analysis, and cross-correlation analysis, while accurate, frequently require significant manual effort and are not always suitable for large-scale or diverse MEA datasets. This novel method leverages high-density MEAs and advanced data analysis techniques to classify neurons purely based on network activity recordings. Briefly, these methods in provide a holistic analysis of neuronal activity, often focusing on unified aspects including the overall network dynamics. This approach not only reduces the need for invasive procedures and manual intervention but also offers a scalable and adaptable solution that can be applied to a wide range of experiments. By integrating real-time feedback in a closed-loop system, this method allows for precise control over neuronal activity, enhancing the accuracy and effectiveness of stimulation experiments. This advancement enables researchers to focus on meaningful scientific inquiries rather than spending time on labor-intensive classification processes, thereby accelerating the pace of discovery and innovation in biological neural network research.
+
+However, like most methods, this one falls short of perfect. Outliers or inconsistencies in recording data can skew the cofiring probabilities, effectively reducing the reliability of the integral spectrum. Relationships between neurons can become misleading when not checked with the Hamming distance graphs as those are designed to represent the variability of the data collected. As high-quality HD-MEA compatible machines can still only record a small portion of the available channels, this method is best used as an extrapolation of the bigger picture.
+
+\subsection{Frequency Game}
+In regards to self-regulating applied stimulation, the convergence of button A press probabilities at stimulation levels 5 to 9 substantiates the culture's abilities to balance between the two buttons. In Figure 11(b), a regression line, simple moving average (SMA), and interpolative step function were applied to further analyze the changes that occurred after experimentation. The interpolative step function, denoted by a dashed, green line, aids in showing the change in ratio of inhibitory to excitatory counts per day. The SMA, marked by a solid, blue line, fills the gap between the calculated data and the overall trend. By comparing the same set of 4 wells under control and experimental conditions, the greater difference in the observed ratios in the experimental wells suggest heightened dynamic variability. This makes sense as stimulation was being administered at fluctuating rates, affecting which neurons fire before or after others. 
+
+Though, it should be noted that since large sections of each chip were recorded (referring to the buttons) in each experimental day, the spectrum of average cofiring probability integrals may not provide enough variability to be the most ideal method of comparison. From Figures 9(a) and 10(a), the balancing frequency between 1.0 and 1.8 Hz is deemed significant since it remains true across all of the experimental cultures. Furthermore, the cultures showed signs of learning after the first day when adapting to the frequency game. The density of each button recorded can skew the calculated relationships between the neurons as there is little difference between the recorded action potentials of direct neighbors. From this, it can be inferred that the proposed method for classification in excitatory and inhibitory neurons is best suited for recordings evenly spaced across the entirety of a culture, rather than a single dense section with a few scattered, distant channels. Regardless, the frequency game demonstrated the use of the proposed method of classification in a practical application, showing how it can be scaled to fit the needs of any type of experiment that quantifies changes in temporal relationships. It also demonstrated that neural cultures can easily adapt to handling external stimuli when given a specific challenge and learn how to achieve a desired frequency through balancing action potentials sent through the provided tools.
+
+
+
+% limits & future
+\section{Limitations \& Future Research}
+Having a limited number of cultures available for the performed experiment, the scope of this study was potentially constrained due to a low culture heterogeneity. The variability in neuronal behavior across different cultures and the limited sample size may have introduced biases that could be mitigated with a larger dataset. Additionally, not all 6 wells could be recorded for the experimental groups of the frequency game, limiting comparisons to only 4 wells. Furthermore, the MaxTwo machine has its own unique nuances, requiring auxiliary steps to ensure proper data recording before analysis.
+
+A future study should examine the ratio between inhibitory and excitatory counts over a much longer period of time to observe the consistency of behavioral repetition. This information would be valuable for understanding the mechanics of neural plasticity, stability of neural connections, and the ability of cultures to maintain a state of equilibrium.
+
+In the future, machine learning techniques should be applied to further build upon methods of classification. By training models on large recording data, researchers can produce more accurate and reliable results. This would enhance the robustness and applicability of classification across various experimental scenarios, providing a newfound perspective of the relationships between neurons.
+
+Another promising direction is the application of this method to diseased samples. By identifying excitatory and inhibitory neurons in cultures derived from patients with neurological disorders such as Alzheimer's, Parkinson's, or epilepsy, researchers can gain valuable insights into disease mechanisms and potential therapeutic treatments. The development of more advanced closed-loop stimulation systems can enable precise control over neuronal activity, paving the way for innovative growth that utilizes neural plasticity to restore normal function in diseased or damaged neural connections.
+
+
+
+% conclusion
+\section{Conclusion}
+Ultimately, the series of algorithms developed in this study provide a novel approach to the way researchers can uncover the temporal relationships within biological neural networks. As a precursor to the core algorithms, checking the validity of recorded data through the Hamming and physical distances is necessary to ensure that the proper relationships between channels emerge later on. The heart of the study lies both in the creation of the average cofiring probability and integral calculation functions, as well as the application of these algorithms in the frequency game. The frequency game showed promise in the way that neural cultures can self-regulate and be studied in a closed-loop system with modern techniques. Most significantly, it can be learned that this method of classifying excitatory and inhibitory neurons from a selected scope of recorded channels can both be an extrapolation of the underlying network mechanics and act as a scalable, non-invasive tool for neuroscience researchers to use in their studies. Future research has the potential to advance treatments for neurological disorders and provide a deeper understanding of the brain's complex network dynamics.
+
+% thanks
+\section{Acknowledgments}
+Special thanks are given to Nathan Wu, Trevor Sullivan, and Dr. Wesley Clawson for their unparalleled guidance and support throughout the duration of this research. Their expertise and mentorship have been invaluable to the success of this project. Additionally, I would like to express my gratitude for Mrs. Frank and Mr. Gendels, as well as my former research teacher Mrs. Vandergoot, for their tremendous support and guidance.
+
+
+\newpage
+
+\printbibliography
+
+\end{document}
+
+
+
+
